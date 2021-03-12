@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const { errors } = require('celebrate');
-// const cors = require('cors');
+const cors = require('cors');
 const helmet = require('helmet');
 const router = require('./routes/index');
 const limiter = require('./middlewares/limiter');
@@ -17,31 +17,15 @@ const app = express();
 app.use(limiter);
 // app.use(cors());
 
-// app.use(
-//   '*',
-//   cors({
-//     origin: [
-//       'http://localhost:3001',
-//     ],
-//     credentials: true,
-//   }),
-// );
-// const whitelist = [
-//   'http://localhost:3000',
-//   'http://localhost:3001',
-// ];
-// const corsOptions = {
-//   origin(origin, callback) {
-//     if (whitelist.indexOf(origin) !== -1 || !origin) {
-//       callback(null, true);
-//     } else {
-//       callback(new Error('Not allowed by CORS.'));
-//     }
-//   },
-// };
-
-// app.use(cors(corsOptions));
-
+app.use(
+  '*',
+  cors({
+    origin: [
+      'http://localhost:3001',
+    ],
+    credentials: true,
+  }),
+);
 app.use(helmet());
 app.use(cookieParser());
 app.use(bodyParser.json());
