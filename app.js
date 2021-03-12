@@ -22,6 +22,8 @@ app.use(
   cors({
     origin: [
       'http://localhost:3001',
+      'https://aveor-movie.students.nomoredomains.icu/',
+      'http://aveor-movie.students.nomoredomains.icu/',
     ],
     credentials: true,
   }),
