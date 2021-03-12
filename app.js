@@ -15,19 +15,19 @@ const NotFoundError = require('./errors/NotFoundError.js');
 const { PORT = 3000, NODE_ENV, MONGO_URL } = process.env;
 const app = express();
 app.use(limiter);
-app.use(cors());
+// app.use(cors());
 
-// app.use(
-//   '*',
-//   cors({
-//     origin: [
-//       'http://aveor-movie.students.nomoredomains.icu/',
-//       'https://aveor-movie.students.nomoredomains.icu/',
-//       'http://localhost:3001',
-//     ],
-//     credentials: true,
-//   }),
-// );
+app.use(
+  '*',
+  cors({
+    origin: [
+      'http://aveor-movie.students.nomoredomains.icu',
+      'https://aveor-movie.students.nomoredomains.icu',
+      'http://localhost:3001',
+    ],
+    credentials: true,
+  }),
+);
 app.use(helmet());
 app.use(cookieParser());
 app.use(bodyParser.json());
