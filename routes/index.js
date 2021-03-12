@@ -4,7 +4,7 @@ const { celebrate, Joi } = require('celebrate');
 const usersRouter = require('./users');
 const moviesRouter = require('./movies');
 
-const { createUser, login } = require('../controllers/users');
+const { createUser, login, logout } = require('../controllers/users');
 const auth = require('../middlewares/auth');
 const NotFoundError = require('../errors/NotFoundError');
 
@@ -25,6 +25,7 @@ routes.post('/signin', celebrate({
 }),
 login);
 
+routes.get('/signout', logout);
 routes.use('/users', auth, usersRouter);
 routes.use('/movies', auth, moviesRouter);
 routes.use(() => {

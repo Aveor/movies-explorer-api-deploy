@@ -16,42 +16,112 @@ const getUser = (req, res, next) => {
     .catch(next);
 };
 
+// const createUser = (req, res, next) => {
+//   const { name, email, password } = req.body;
+//   bcrypt.hash(password, 10, (error, hash) => {
+//     User.findOne({ email })
+//       .then((user) => {
+//         if (user) return next(new ConflictError('Такой пользователь уже существует'));
+//         return User.create({ name, email, password: hash })
+//           .then((newUser) => res
+//             .status(200)
+//             .send({ success: true, message: `Пользователь ${newUser.email} успешно создан` }))
+//           .catch((err) => console.log(err));
+//       })
+//       .catch(next);
+//   });
+// };
+
 const createUser = (req, res, next) => {
-  const { name, email, password } = req.body;
-  bcrypt.hash(password, 10, (error, hash) => {
-    User.findOne({ email })
-      .then((user) => {
-        if (user) return next(new ConflictError('Такой пользователь уже существует'));
-        return User.create({ name, email, password: hash })
-          .then((newUser) => res
-            .status(200)
-            .send({ success: true, message: `Пользователь ${newUser.email} успешно создан` }))
-          .catch((err) => console.log(err));
-      })
-      .catch(next);
-  });
+  const { email, password, name } = req.body;
+
+  bcrypt
+    .hash(password, 10)
+    .then((hash) => User.create({
+      email,
+      password: hash,
+      name,
+    }))
+    .then((newUser) => {
+      if (!newUser) {
+        throw new ValidationError('Запрос некорректен');
+      }
+      return User.findById(newUser._id);
+    })
+    .then((newUser) => {
+      if (!newUser) {
+        throw new NotFoundError('Пользователь не найден');
+      }
+      res.send(newUser);
+    })
+    .catch((err) => {
+      if (err.code === 11000) {
+        next(new ConflictError('Такой пользователь уже существует'));
+      }
+      next(err);
+    });
 };
+
+// const login = (req, res, next) => {
+//   const { email, password } = req.body;
+//   return User.findOne({ email })
+//     .select('+password')
+//     .then(async (user) => {
+//       if (!user) {
+//         return next(new AuthError('Такого пользователя не существует'));
+//       }
+//       const isPasswordMatch = await bcrypt.compare(password, user.password);
+//       if (!isPasswordMatch) {
+//         return next(new AuthError('Не правильный логин или пароль'));
+//       }
+//       const token = jwt.sign(
+//         { _id: user._id },
+//         `${NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret'}`,
+//         { expiresIn: '7d' },
+//       );
+//       return res.status(200).send({ token });
+//     })
+//     .catch(next);
+// };
 
 const login = (req, res, next) => {
   const { email, password } = req.body;
-  return User.findOne({ email })
-    .select('+password')
-    .then(async (user) => {
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
       if (!user) {
-        return next(new AuthError('Такого пользователя не существует'));
-      }
-      const isPasswordMatch = await bcrypt.compare(password, user.password);
-      if (!isPasswordMatch) {
-        return next(new AuthError('Не правильный логин или пароль'));
+        throw new AuthError('Такого пользователя не существует');
       }
       const token = jwt.sign(
         { _id: user._id },
-        `${NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret'}`,
-        { expiresIn: '7d' },
+        NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret',
+        {
+          expiresIn: '7d',
+        },
       );
-      return res.status(200).send({ token });
+      const currentUser = user.toObject();
+      delete currentUser.password;
+
+      res
+        .cookie('jwt', token, {
+          maxAge: 604800000,
+          httpOnly: true,
+        })
+        .send(currentUser);
     })
-    .catch(next);
+    .catch((err) => next(err));
+};
+
+const logout = (req, res, next) => {
+  try {
+    res
+      .cookie('jwt', '', {
+        maxAge: -1,
+        httpOnly: true,
+      })
+      .send({ message: 'Осуществлен выход пользователя' });
+  } catch (err) {
+    next(new AuthError('Такого пользователя не существует'));
+  }
 };
 
 const updateUser = (req, res, next) => {
@@ -84,4 +154,5 @@ module.exports = {
   createUser,
   login,
   updateUser,
+  logout,
 };
